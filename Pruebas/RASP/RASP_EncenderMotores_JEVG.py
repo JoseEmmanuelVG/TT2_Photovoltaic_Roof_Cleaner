@@ -1,6 +1,3 @@
-#sudo apt update
-#sudo apt install python3-gpiozero
-
 from gpiozero import OutputDevice
 from time import sleep
 
@@ -21,15 +18,19 @@ try:
     # Habilita el motor
     EN.off()
     
-    # Mueve el motor hacia adelante 1600 pasos
-    motor_steps(1600, False)
-    
-    # Pausa entre la inversión de dirección
-    sleep(0.1)
-    
-    # Mueve el motor hacia atrás 1600 pasos
-    motor_steps(1600, True)
-    
-finally:
-    # Deshabilita el motor al finalizar
+    while True:  # Bucle infinito para repetir los movimientos
+        # Mueve el motor hacia adelante 1600 pasos
+        motor_steps(1600, False)
+        
+        # Pausa entre la inversión de dirección
+        sleep(0.1)
+        
+        # Mueve el motor hacia atrás 1600 pasos
+        motor_steps(1600, True)
+        
+        # Pausa antes de repetir el ciclo
+        sleep(0.1)
+
+except KeyboardInterrupt:
+    # Si el usuario interrumpe la ejecución (Ctrl+C), detiene el motor
     EN.on()
