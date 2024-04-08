@@ -2,9 +2,9 @@ from gpiozero import OutputDevice
 from time import sleep
 
 # Define los pines a utilizar usando gpiozero
-PUL = OutputDevice(17)  # Stepper Drive Pulses
-DIR = OutputDevice(27)  # Controller Direction Bit (High for Controller default / LOW to Force a Direction Change)
-ENA = OutputDevice(22, initial_value=False)  # Controller Enable Bit (Low to Enable / HIGH to Disable)
+PUL = OutputDevice(16)  # Stepper Drive Pulses
+DIR = OutputDevice(20)  # Controller Direction Bit (High for Controller default / LOW to Force a Direction Change)
+ENA = OutputDevice(21, initial_value=False)  # Controller Enable Bit (Low to Enable / HIGH to Disable)
 
 durationFwd = 5000  # Duración del giro en una dirección
 durationBwd = 5000  # Duración del giro en la dirección opuesta

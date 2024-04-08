@@ -1,4 +1,5 @@
 from gpiozero import PWMOutputDevice
+from gpiozero import OutputDevice
 from time import sleep
 
 # Define los pines como salidas PWM

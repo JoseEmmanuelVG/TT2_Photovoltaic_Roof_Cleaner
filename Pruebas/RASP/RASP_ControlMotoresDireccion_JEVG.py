@@ -17,10 +17,10 @@ class StepperMotor:
         self.ENA.off()  # Deshabilita el controlador
 
 # Instancia cada motor con sus respectivos pines
-motor1 = StepperMotor(17, 27, 22)
-motor2 = StepperMotor(23, 24, 25)
-motor3 = StepperMotor(5, 6, 26)
-motor4 = StepperMotor(16, 20, 21)
+motor1 = StepperMotor(23, 24, 25)
+motor2 = StepperMotor(16, 20, 21)
+motor3 = StepperMotor(17, 27, 22)
+motor4 = StepperMotor(5, 6, 26)
 
 # Configuraciones de movimiento
 duration = 10000  # Número de pasos para cada dirección
@@ -31,17 +31,17 @@ print("Inicio del programa")
 # Mover todos los motores hacia adelante y hacia atrás
 def move_motors():
     # Mover hacia adelante
-    motor1.move(duration, False, delay)
+    motor1.move(duration, True, delay)
+    motor3.move(duration, True, delay)
     motor2.move(duration, False, delay)
-    motor3.move(duration, False, delay)
     motor4.move(duration, False, delay)
     
-    sleep(0.5)  # Pausa entre cambios de dirección
+    sleep(2)  # Pausa entre cambios de dirección
 
     # Mover hacia atrás
-    motor1.move(duration, True, delay)
+    motor1.move(duration, False, delay)
+    motor3.move(duration, False, delay)
     motor2.move(duration, True, delay)
-    motor3.move(duration, True, delay)
     motor4.move(duration, True, delay)
 
 move_motors()
