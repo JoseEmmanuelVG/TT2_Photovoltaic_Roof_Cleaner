@@ -1,43 +1,35 @@
-import RPi.GPIO as GPIO
-import time
+#sudo apt update
+#sudo apt install python3-gpiozero
 
-# Configura el modo de los pines
-GPIO.setmode(GPIO.BCM)
+from gpiozero import OutputDevice
+from time import sleep
 
-# Define los pines a utilizar
-PUL = 17  # Pin para la señal de pulso
-DIR = 27  # Pin para la dirección
-EN = 22   # Pin para habilitar el motor
-
-# Configura los pines como salida
-GPIO.setup(PUL, GPIO.OUT)
-GPIO.setup(DIR, GPIO.OUT)
-GPIO.setup(EN, GPIO.OUT)
-
-# Deshabilita el motor para comenzar
-GPIO.output(EN, GPIO.HIGH)
+# Define los pines a utilizar usando gpiozero
+PUL = OutputDevice(17)  # Pin para la señal de pulso
+DIR = OutputDevice(27)  # Pin para la dirección
+EN = OutputDevice(22, initial_value=True)  # Pin para habilitar el motor, inicialmente desactivado
 
 def motor_steps(steps, direction):
-    GPIO.output(DIR, direction)  # Establece la dirección
+    DIR.value = direction  # Establece la dirección
     for i in range(steps):
-        GPIO.output(PUL, GPIO.HIGH)
-        time.sleep(0.0004)  # Espera 400 microsegundos
-        GPIO.output(PUL, GPIO.LOW)
-        time.sleep(0.0004)  # Espera 400 microsegundos
+        PUL.on()
+        sleep(0.0004)  # Espera 400 microsegundos
+        PUL.off()
+        sleep(0.0004)  # Espera 400 microsegundos
 
 try:
     # Habilita el motor
-    GPIO.output(EN, GPIO.LOW)
+    EN.off()
     
     # Mueve el motor hacia adelante 1600 pasos
-    motor_steps(1600, GPIO.LOW)
+    motor_steps(1600, False)
     
     # Pausa entre la inversión de dirección
-    time.sleep(0.1)
+    sleep(0.1)
     
     # Mueve el motor hacia atrás 1600 pasos
-    motor_steps(1600, GPIO.HIGH)
+    motor_steps(1600, True)
     
 finally:
-    # Limpia los pines GPIO y deshabilita el motor al finalizar
-    GPIO.cleanup()
+    # Deshabilita el motor al finalizar
+    EN.on()
