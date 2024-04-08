@@ -31,18 +31,22 @@ print("Inicio del programa")
 # Mover todos los motores hacia adelante y hacia atrás
 def move_motors():
     # Mover hacia adelante
-    motor1.move(duration, True, delay)
-    motor3.move(duration, True, delay)
-    motor2.move(duration, False, delay)
-    motor4.move(duration, False, delay)
+    # Llantas lado izquiero
+    motor1.move(duration, True, delay) # Llanta frontal izquierda
+    motor3.move(duration, True, delay) # Llanta trasera izquiera
+    # Llatas lado derecho
+    motor2.move(duration, False, delay) # Llanta frontal derecha
+    motor4.move(duration, False, delay) # Llanta trasera derecha
     
     sleep(2)  # Pausa entre cambios de dirección
 
     # Mover hacia atrás
-    motor1.move(duration, False, delay)
-    motor3.move(duration, False, delay)
-    motor2.move(duration, True, delay)
-    motor4.move(duration, True, delay)
+    # Llantas lado izquiero
+    motor1.move(duration, False, delay) # Llanta frontal izquierda
+    motor3.move(duration, False, delay) # Llanta trasera izquiera
+    # Llatas lado derecho
+    motor2.move(duration, True, delay) # Llanta frontal derecha
+    motor4.move(duration, True, delay) # Llanta trasera derecha 
 
 move_motors()
 
