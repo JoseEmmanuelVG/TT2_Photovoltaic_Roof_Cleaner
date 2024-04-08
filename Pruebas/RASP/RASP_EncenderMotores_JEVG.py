@@ -2,35 +2,43 @@ from gpiozero import OutputDevice
 from time import sleep
 
 # Define los pines a utilizar usando gpiozero
-PUL = OutputDevice(17)  # Pin para la señal de pulso
-DIR = OutputDevice(27)  # Pin para la dirección
-EN = OutputDevice(22, initial_value=True)  # Pin para habilitar el motor, inicialmente desactivado
+PUL = OutputDevice(17)  # Stepper Drive Pulses
+DIR = OutputDevice(27)  # Controller Direction Bit (High for Controller default / LOW to Force a Direction Change)
+ENA = OutputDevice(22, initial_value=False)  # Controller Enable Bit (Low to Enable / HIGH to Disable)
 
-def motor_steps(steps, direction):
-    DIR.value = direction  # Establece la dirección
-    for i in range(steps):
-        PUL.on()
-        sleep(0.0004)  # Espera 400 microsegundos
-        PUL.off()
-        sleep(0.0004)  # Espera 400 microsegundos
+durationFwd = 5000  # Duración del giro en una dirección
+durationBwd = 5000  # Duración del giro en la dirección opuesta
+delay = 0.0001  # Retardo entre pulsos, controla la velocidad del motor
+cycles = 1000  # Número de ciclos a ejecutar
+cyclecount = 0  # Contador de ciclos
 
-try:
-    # Habilita el motor
-    EN.off()
-    
-    while True:  # Bucle infinito para repetir los movimientos
-        # Mueve el motor hacia adelante 1600 pasos
-        motor_steps(1600, False)
-        
-        # Pausa entre la inversión de dirección
-        sleep(0.1)
-        
-        # Mueve el motor hacia atrás 1600 pasos
-        motor_steps(1600, True)
-        
-        # Pausa antes de repetir el ciclo
-        sleep(0.1)
+def forward():
+    ENA.on()  # Habilita el controlador
+    sleep(.5)  # Pausa por si hay cambio de dirección
+    DIR.off()  # Establece dirección hacia adelante
+    for x in range(durationFwd):
+        PUL.toggle()  # Cambia el estado del pin PUL
+        sleep(delay)
+    ENA.off()  # Deshabilita el controlador
+    sleep(.5)  # Pausa por si hay cambio de dirección
 
-except KeyboardInterrupt:
-    # Si el usuario interrumpe la ejecución (Ctrl+C), detiene el motor
-    EN.on()
+def reverse():
+    ENA.on()  # Habilita el controlador
+    sleep(.5)  # Pausa por si hay cambio de dirección
+    DIR.on()  # Establece dirección hacia atrás
+    for y in range(durationBwd):
+        PUL.toggle()  # Cambia el estado del pin PUL
+        sleep(delay)
+    ENA.off()  # Deshabilita el controlador
+    sleep(.5)  # Pausa por si hay cambio de dirección
+
+print("Inicio del programa")
+print("Ciclos a ejecutar: ", cycles)
+
+while cyclecount < cycles:
+    forward()
+    reverse()
+    cyclecount += 1
+    print(f'Ciclos completados: {cyclecount}')
+
+print('Ciclos completados')
