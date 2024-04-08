@@ -1,0 +1,5 @@
+ttm@raspberrypi:~ $ sudo python /home/ttm/TT2_Photovoltaic_Roof_Cleaner/Pruebas/RASP/RASP_EncenderMotores_JEVG.py
+Traceback (most recent call last):
+  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/Pruebas/RASP/RASP_EncenderMotores_JEVG.py", line 13, in <module>
+    GPIO.setup(PUL, GPIO.OUT)
+RuntimeError: Cannot determine SOC peripheral base address
