@@ -1,28 +1,11 @@
-ttm@raspberrypi:~/TT2_Photovoltaic_Roof_Cleaner $ pip install gpiozero
-error: externally-managed-environment
-
-× This environment is externally managed
-╰─> To install Python packages system-wide, try apt install
-    python3-xyz, where xyz is the package you are trying to
-    install.
-    
-    If you wish to install a non-Debian-packaged Python package,
-    create a virtual environment using python3 -m venv path/to/venv.
-    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
-    sure you have python3-full installed.
-    
-    For more information visit http://rptl.io/venv
-
-note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
-hint: See PEP 668 for the detailed specification.
-ttm@raspberrypi:~/TT2_Photovoltaic_Roof_Cleaner $ /home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/bin/python /home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/main.py
+(entorno_jevg) ttm@raspberrypi:~/TT2_Photovoltaic_Roof_Cleaner $ sudo /home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/bin/python /home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/main.py
 /home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from lgpio: No module named 'lgpio'
   warnings.warn(
 /home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from rpigpio: No module named 'RPi'
   warnings.warn(
 /home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from pigpio: No module named 'pigpio'
   warnings.warn(
-/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from native: unable to open /dev/gpiomem or /dev/mem; upgrade your kernel or run as root
+/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from native: unable to determine gpio base
   warnings.warn(
 Traceback (most recent call last):
   File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/main.py", line 3, in <module>
@@ -52,5 +35,3 @@ Traceback (most recent call last):
   File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 302, in _default_pin_factory
     raise BadPinFactory('Unable to load any default pin factory!')
 gpiozero.exc.BadPinFactory: Unable to load any default pin factory!
-
-
