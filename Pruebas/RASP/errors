@@ -52,3 +52,5 @@ Traceback (most recent call last):
   File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 302, in _default_pin_factory
     raise BadPinFactory('Unable to load any default pin factory!')
 gpiozero.exc.BadPinFactory: Unable to load any default pin factory!
+
+
