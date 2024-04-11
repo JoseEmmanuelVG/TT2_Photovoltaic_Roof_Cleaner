@@ -26,4 +26,19 @@ def register_callbacks(app):
         elif button_id == 'backward-btn':
             move_backward()
             return "Moviendo hacia atrás"
+        elif button_id == 'left-btn':
+            move_left()
+            return "Girando hacia la izquierda"
+        elif button_id == 'right-btn':
+            move_right()
+            return "Girando hacia la derecha"
+        elif button_id == 'rotate-right-btn':
+            rotate_right()
+            return "Rotando hacia la derecha"
+        elif button_id == 'rotate-left-btn':
+            rotate_left()
+            return "Rotando hacia la izquierda"
+        else:
+            return "No se ha presionado ningún botón"
+        
         # Continúa para los demás botones...

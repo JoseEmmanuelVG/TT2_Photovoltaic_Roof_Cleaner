@@ -1,4 +1,8 @@
-from gpiozero import OutputDevice
+from gpiozero import Device
+from gpiozero.pins.rpigpio import RPiGPIOFactory 
+Device.pin_factory = RPiGPIOFactory()
+
+
 from time import sleep
 import threading
 

@@ -1,37 +1,187 @@
-(entorno_jevg) ttm@raspberrypi:~/TT2_Photovoltaic_Roof_Cleaner $ sudo /home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/bin/python /home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/main.py
-/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from lgpio: No module named 'lgpio'
-  warnings.warn(
-/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from rpigpio: No module named 'RPi'
-  warnings.warn(
-/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from pigpio: No module named 'pigpio'
-  warnings.warn(
-/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from native: unable to determine gpio base
-  warnings.warn(
+(entorno_jevg) ttm@raspberrypi:~/TT2_Photovoltaic_Roof_Cleaner $ /home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/bin/python /home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/main.py
 Traceback (most recent call last):
   File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/main.py", line 3, in <module>
     import callbacks
   File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/callbacks.py", line 3, in <module>
     from functions import move_forward, move_backward, move_left, move_right, rotate_right, rotate_left
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/functions.py", line 47, in <module>
-    motor1 = StepperMotor(23, 24, 25)
-             ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/functions.py", line 19, in __init__
-    self.PUL = OutputDevice(pul_pin)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
-    self = super().__call__(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/output_devices.py", line 74, in __init__
-    super().__init__(pin, pin_factory=pin_factory)
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/mixins.py", line 75, in __init__
-    super().__init__(*args, **kwargs)
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 544, in __init__
-    super().__init__(pin_factory=pin_factory)
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 245, in __init__
-    Device.ensure_pin_factory()
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 270, in ensure_pin_factory
-    Device.pin_factory = Device._default_pin_factory()
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 302, in _default_pin_factory
-    raise BadPinFactory('Unable to load any default pin factory!')
-gpiozero.exc.BadPinFactory: Unable to load any default pin factory!
+  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/functions.py", line 2, in <module>
+    from gpiozero.pins.rpigpio import RPiGPIOFactory 
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/pins/rpigpio.py", line 10, in <module>
+    from RPi import GPIO
+ModuleNotFoundError: No module named 'RPi'
+
+
+
+functions
+from gpiozero import Device
+from gpiozero.pins.rpigpio import RPiGPIOFactory 
+Device.pin_factory = RPiGPIOFactory()
+
+
+from time import sleep
+import threading
+
+class StepperMotor:
+    """
+    Clase para controlar un motor paso a paso.
+    """
+
+    def __init__(self, pul_pin, dir_pin, ena_pin):
+        """
+        Inicializa un objeto StepperMotor con los pines de control del motor.
+
+        Args:
+            pul_pin (int): Número del pin para el pulso.
+            dir_pin (int): Número del pin para la dirección.
+            ena_pin (int): Número del pin para la habilitación.
+        """
+        self.PUL = OutputDevice(pul_pin)
+        self.DIR = OutputDevice(dir_pin)
+        self.ENA = OutputDevice(ena_pin, initial_value=False)
+
+    def move(self, steps, direction, delay):
+        """
+        Mueve el motor una cantidad específica de pasos en una dirección y con un retardo entre pulsos.
+
+        Args:
+            steps (int): Número de pasos a mover el motor.
+            direction (bool): Dirección del movimiento (True para adelante, False para atrás).
+            delay (float): Retardo entre pulsos en segundos.
+        """
+        def movement_sequence():
+            self.ENA.on()
+            self.DIR.value = direction
+            for _ in range(steps):
+                self.PUL.on()
+                sleep(delay)
+                self.PUL.off()
+                sleep(delay)
+            self.ENA.off()
+
+        thread = threading.Thread(target=movement_sequence)
+        thread.start()
+        return thread
+
+# Instancia cada motor con sus respectivos pines
+motor1 = StepperMotor(23, 24, 25)
+motor2 = StepperMotor(16, 20, 21)
+motor3 = StepperMotor(17, 27, 22)
+motor4 = StepperMotor(5, 6, 26)
+
+duration = 10000  # Número de pasos para cada dirección
+delay = 0.0001  # Retardo entre pulsos, controla la velocidad del motor
+
+def move_all_at_once(movements):
+    """
+    Mueve todos los motores al mismo tiempo.
+
+    Args:
+        movements (list): Lista de tuplas (motor, direction) con los movimientos a realizar.
+    """
+    threads = []
+    for move in movements:
+        thread = threading.Thread(target=move[0].move, args=(duration, move[1], delay))
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
+
+def move_forward():
+    """
+    Mueve todos los motores hacia adelante.
+    """
+    print("Moviendo hacia adelante")
+    movements = [
+        (motor1, True),
+        (motor2, False),
+        (motor3, True),
+        (motor4, False),
+    ]
+    move_all_at_once(movements)
+
+def move_backward():
+    """
+    Mueve todos los motores hacia atrás.
+    """
+    print("Moviendo hacia atrás")
+    movements = [
+        (motor1, False),
+        (motor2, True),
+        (motor3, False),
+        (motor4, True),
+    ]
+    move_all_at_once(movements)
+
+def move_left():
+    """
+    Gira todos los motores hacia la izquierda.
+    """
+    print("Girando hacia la izquierda")
+    movements = [
+        (motor1, False),
+        (motor2, False),
+        (motor3, True),
+        (motor4, True),
+    ]
+    move_all_at_once(movements)
+
+def move_right():
+    """
+    Gira todos los motores hacia la derecha.
+    """
+    print("Girando hacia la derecha")
+    movements = [
+        (motor1, True),
+        (motor2, True),
+        (motor3, False),
+        (motor4, False),
+    ]
+    move_all_at_once(movements)
+
+def rotate_right():
+    """
+    Mueve todos los motores hacia la derecha.
+    """
+    print("Moviendo hacia la derecha")
+    movements = [
+        (motor1, True),
+        (motor2, True),
+        (motor3, True),
+        (motor4, True),
+    ]
+    move_all_at_once(movements)
+
+def rotate_left():
+    """
+    Mueve todos los motores hacia la izquierda.
+    """
+    print("Moviendo hacia la izquierda")
+    movements = [
+        (motor1, False),
+        (motor2, False),
+        (motor3, False),
+        (motor4, False),
+    ]
+    move_all_at_once(movements)
+
+
+
+
+
+main
+from dash import Dash
+import ui_definition
+import callbacks
+
+app = Dash(__name__)
+app.layout = ui_definition.create_layout()
+
+callbacks.register_callbacks(app)
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
+
+
+
