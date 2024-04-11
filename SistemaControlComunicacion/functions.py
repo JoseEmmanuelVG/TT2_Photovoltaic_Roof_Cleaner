@@ -1,4 +1,4 @@
-from gpiozero import Device
+from gpiozero import Device, OutputDevice
 from gpiozero.pins.rpigpio import RPiGPIOFactory 
 Device.pin_factory = RPiGPIOFactory()
 

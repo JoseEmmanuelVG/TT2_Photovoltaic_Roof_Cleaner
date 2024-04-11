@@ -1,5 +1,4 @@
 from dash.dependencies import Input, Output
-# Suponiendo que functions.py contiene todas las funciones de movimiento como move_forward(), etc.
 from functions import move_forward, move_backward, move_left, move_right, rotate_right, rotate_left
 
 def register_callbacks(app):
