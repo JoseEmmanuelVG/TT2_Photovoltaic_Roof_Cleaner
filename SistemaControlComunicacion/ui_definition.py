@@ -9,8 +9,5 @@ def create_layout():
         html.Button('Derecha', id='right-btn'),
         html.Button('Rotar Derecha', id='rotate-right-btn'),
         html.Button('Rotar Izquierda', id='rotate-left-btn'),
-        # Botones para encender y apagar el LED
-        html.Button('TEST ON', id='test-led-btn'),
-        # Espacio para mensajes de estado
         html.Div(id='status-div')
     ])

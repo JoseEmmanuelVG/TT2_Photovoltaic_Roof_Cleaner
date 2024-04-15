@@ -1,6 +1,7 @@
+import dash
 from dash.dependencies import Input, Output
 from functions import (
-    move_forward, move_backward, move_left, move_right, rotate_right, rotate_left, test_led
+    move_forward, move_backward, move_left, move_right, rotate_right, rotate_left
 )
 
 
@@ -12,11 +13,9 @@ def register_callbacks(app):
          Input('left-btn', 'n_clicks'),
          Input('right-btn', 'n_clicks'),
          Input('rotate-right-btn', 'n_clicks'),
-         Input('rotate-left-btn', 'n_clicks'),
-         Input('led-on-btn', 'n_clicks'),
-         Input('led-off-btn', 'n_clicks')]
+         Input('rotate-left-btn', 'n_clicks'),]
     )
-    def update_output(forward, backward, left, right, rotate_right_btn, rotate_left_btn, led_on, led_off):
+    def update_output(forward, backward, left, right, rotate_right_btn, rotate_left_btn):
         ctx = dash.callback_context
 
         if not ctx.triggered:
