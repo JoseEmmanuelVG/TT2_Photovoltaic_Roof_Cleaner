@@ -1,5 +1,8 @@
 from dash.dependencies import Input, Output
-from functions import move_forward, move_backward, move_left, move_right, rotate_right, rotate_left
+from functions import (
+    move_forward, move_backward, move_left, move_right, rotate_right, rotate_left, test_led
+)
+
 
 def register_callbacks(app):
     @app.callback(
@@ -9,13 +12,15 @@ def register_callbacks(app):
          Input('left-btn', 'n_clicks'),
          Input('right-btn', 'n_clicks'),
          Input('rotate-right-btn', 'n_clicks'),
-         Input('rotate-left-btn', 'n_clicks')]
+         Input('rotate-left-btn', 'n_clicks'),
+         Input('led-on-btn', 'n_clicks'),
+         Input('led-off-btn', 'n_clicks')]
     )
-    def update_output(forward, backward, left, right, rotate_right_btn, rotate_left_btn):
+    def update_output(forward, backward, left, right, rotate_right_btn, rotate_left_btn, led_on, led_off):
         ctx = dash.callback_context
 
         if not ctx.triggered:
-            button_id = 'No buttons yet clicked'
+            return "No buttons yet clicked"
         else:
             button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
@@ -38,6 +43,5 @@ def register_callbacks(app):
             rotate_left()
             return "Rotando hacia la izquierda"
         else:
-            return "No se ha presionado ningún botón"
-        
-        # Continúa para los demás botones...
+            return "Acción desconocida"
+

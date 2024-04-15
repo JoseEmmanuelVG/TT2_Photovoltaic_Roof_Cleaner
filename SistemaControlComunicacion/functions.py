@@ -1,8 +1,43 @@
-from gpiozero import Device, OutputDevice
-from gpiozero.pins.rpigpio import RPiGPIOFactory 
-Device.pin_factory = RPiGPIOFactory()
+from gpiozero import Device, LED
+from gpiozero.pins.lgpio import LGPIOFactory
+from gpiozero.exc import GPIOPinInUse
+from gpiozero import OutputDevice
+from time import sleep
 
 
+Device.pin_factory = LGPIOFactory()
+
+led_pin = 4  # Asegúrate de que este pin no se use en otro lugar simultáneamente
+
+try:
+    with LED(led_pin) as led:
+        led.on()
+        sleep(1)
+        led.off()
+except GPIOPinInUse:
+    print(f"GPIO {led_pin} está actualmente en uso. Intentando liberar y reasignar...")
+    # Aquí el manejo adecuado depende de tu lógica de aplicación específica
+
+
+
+def test_led():
+    try:
+        led = LED(4)  # Intenta configurar el LED
+        led.on()
+        sleep(1)
+        led.off()
+    except GPIOPinInUse:
+        print("GPIO 4 está actualmente en uso. Intentando liberar...")
+    finally:
+        if 'led' in locals():  # Verifica si 'led' fue exitosamente definido
+            led.close()  # Cierra y libera el pin
+
+
+
+
+
+# Prueba Motores Paso a Paso
+from gpiozero.exc import GPIOPinInUse
 from time import sleep
 import threading
 
