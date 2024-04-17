@@ -27,7 +27,7 @@ Traceback (most recent call last):
     super().__init__(*args, **kwargs)
   File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/devices.py", line 553, in __init__
     pin = self.pin_factory.pin(pin)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^
+          ^^^^^^^^^^^^^^^^^^^^^^^^^ac
   File "/home/ttm/TT2_Photovoltaic_Roof_Cleaner/entorno_jevg/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 413, in pin
     pin = self.pin_class(self, info)
           ^^^^^^^^^^^^^^^^^^^^^^^^^^
