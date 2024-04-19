@@ -1,0 +1,39 @@
+/* Estilo general de los botones */
+button {
+    cursor: pointer;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    background-color: #007BFF;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Estilo específico cuando un botón está 'activo' */
+button.active {
+    background-color: #28a745; /* Verde para indicar actividad */
+}
+
+/* Estilo para el botón de paro de emergencia */
+#emergency-stop-btn {
+    background-color: red;
+    color: white;
+}
+
+#emergency-stop-btn:hover {
+    background-color: #ff0000;
+}
+
+/* Div para mensajes de estado */
+#status-div {
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+}
