@@ -1,6 +1,5 @@
-from gpiozero import Device, OutputDevice, LED
+from gpiozero import Device, OutputDevice
 from gpiozero.pins.lgpio import LGPIOFactory
-from gpiozero.exc import GPIOPinInUse
 import threading
 import time
 
@@ -22,7 +21,8 @@ class StepperMotor:
             time.sleep(delay)
             self.PUL.off()
             time.sleep(delay)
-        self.ENA.off()
+        if not self.running:
+            self.ENA.off()
 
     def start_moving(self, direction, delay=0.0001):
         if not self.running:
@@ -30,22 +30,23 @@ class StepperMotor:
             self.thread = threading.Thread(target=self.move, args=(direction, delay))
             self.thread.start()
 
-    def stop_moving(self):
+    def stop_moving(self, hold=False):
         self.running = False
         if self.thread is not None:
             self.thread.join()
+        if hold:
+            self.ENA.on()
+        else:
+            self.ENA.off()
 
-
-# Instanciar los motores una sola vez
 motor1 = StepperMotor(23, 24, 25)
 motor2 = StepperMotor(16, 20, 21)
 motor3 = StepperMotor(17, 27, 22)
 motor4 = StepperMotor(5, 6, 26)
 
-
 current_movement = None
 
-def handle_movement(action):
+def handle_movement(action, hold=False):
     global current_movement
     movements = {
         'forward': (True, False, True, False),
@@ -57,16 +58,10 @@ def handle_movement(action):
     }
 
     if action == current_movement:
-        motor1.stop_moving()
-        motor2.stop_moving()
-        motor3.stop_moving()
-        motor4.stop_moving()
+        stop_all_motors(hold=True)  # Stops all motors but holds the torque
         current_movement = None
     else:
-        motor1.stop_moving()
-        motor2.stop_moving()
-        motor3.stop_moving()
-        motor4.stop_moving()
+        stop_all_motors(hold=True)  # Ensure motors are held with torque when stopped
         direction = movements.get(action)
         if direction:
             motor1.start_moving(direction[0])
@@ -75,12 +70,16 @@ def handle_movement(action):
             motor4.start_moving(direction[3])
             current_movement = action
 
+def stop_all_motors(hold=False):
+    motor1.stop_moving(hold)
+    motor2.stop_moving(hold)
+    motor3.stop_moving(hold)
+    motor4.stop_moving(hold)
 
 def emergency_stop():
-    motor1.stop_moving()
-    motor2.stop_moving()
-    motor3.stop_moving()
-    motor4.stop_moving()
+    stop_all_motors(hold=True)
     global current_movement
-    current_movement = None  # Resetear el estado de movimiento actual
-    print("Emergencia: Todos los motores se han detenido.")
+    current_movement = None  # Resets the current movement state
+    print("Emergency: All motors have been stopped.")
+
+stop_all_motors(hold=True)
