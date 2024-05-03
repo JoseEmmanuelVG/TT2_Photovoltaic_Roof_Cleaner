@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc
+from dash import html, dcc
 
 def create_layout():
     return html.Div([
@@ -11,6 +11,8 @@ def create_layout():
             html.Button('Rotar Derecha', id='rotate-right-btn', style={'grid-area': 'rotate-right'}),
             html.Button('Rotar Izquierda', id='rotate-left-btn', style={'grid-area': 'rotate-left'}),
             html.Button('Paro de Emergencia', id='emergency-stop-btn', style={'grid-area': 'stop', 'background-color': 'red', 'color': 'white'}),
+            html.Button('Tomar Foto', id='capture-btn', style={'grid-area': 'capture', 'margin-top': '20px'}),
+            html.Div(id='images-container', style={'grid-area': 'image', 'width': '100%', 'max-width': '600px', 'margin-top': '20px'}),
             html.Div(id='status-div', style={'grid-area': 'status', 'margin-top': '20px', 'text-align': 'center'})
         ], style={
             'display': 'grid',
@@ -21,8 +23,10 @@ def create_layout():
                 "left . right"
                 ". backward ."
                 "rotate-left . rotate-right"
+                "capture capture capture"
                 ". stop ."
                 ". status ."
+                ". image ."
             ''',
             'grid-gap': '10px',
             'justify-content': 'center',

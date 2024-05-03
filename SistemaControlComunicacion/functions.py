@@ -83,3 +83,18 @@ def emergency_stop():
     print("Emergency: All motors have been stopped.")
 
 stop_all_motors(hold=True)
+
+
+# Camara 
+import os
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output
+import base64
+import subprocess
+
+def capture_image():
+
+    # Asegúrate de que el directorio de trabajo actual es donde deseas guardar las imágenes
+    os.chdir('/home/ttm/TT2_Photovoltaic_Roof_Cleaner/Pruebas/RASP/Camara/')
+    # Guarda la imagen en un archivo temporal
+    subprocess.run(['libcamera-still', '-o', 'current_image.jpg'])

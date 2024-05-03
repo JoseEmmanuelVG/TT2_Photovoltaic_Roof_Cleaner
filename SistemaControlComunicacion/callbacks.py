@@ -1,6 +1,8 @@
 from dash.dependencies import Input, Output, State
 import dash
-from functions import handle_movement, emergency_stop
+from functions import handle_movement, emergency_stop, capture_image
+import base64
+
 
 def register_callbacks(app):
     @app.callback(
@@ -31,3 +33,27 @@ def register_callbacks(app):
         active_classes = ['active' if f'{btn}-btn' == button_id else '' for btn in btn_ids]
         
         return [f"{action.replace('_', ' ').capitalize()} iniciado"] + active_classes
+
+   
+    # Cámara
+    from dash import html, dcc
+    
+    @app.callback(
+        Output('images-container', 'children'),
+        [Input('capture-btn', 'n_clicks')],
+        [State('images-container', 'children')],
+        prevent_initial_call=True
+    )
+    def handle_capture(n_clicks, children):
+        if n_clicks:
+            capture_image()  # Función que toma la foto
+            try:
+                with open("/home/ttm/TT2_Photovoltaic_Roof_Cleaner/Pruebas/RASP/Camara/current_image.jpg", "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode()
+                    new_image = html.Img(src=f"data:image/jpeg;base64,{encoded_string}", style={'width': '100%', 'padding-top': '10px'})
+                    children.append(new_image)
+                    return children
+            except Exception as e:
+                print(f"Error al cargar o codificar la imagen: {str(e)}")
+                return children
+        return dash.no_update
