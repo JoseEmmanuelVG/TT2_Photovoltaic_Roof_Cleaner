@@ -1,10 +1,17 @@
 from dash.dependencies import Input, Output, State
 import dash
-from functions import handle_movement, emergency_stop, capture_image
+from functions_remote import handle_movement, emergency_stop, capture_image
 import base64
+
+from dash import html
+import os
+import subprocess
+
+from flask_login import current_user, login_required
 
 
 def register_callbacks(app):
+
     @app.callback(
         [Output('status-div', 'children')] +
         [Output(f'{btn_id}-btn', 'className') for btn_id in ['forward', 'backward', 'left', 'right', 'rotate-right', 'rotate-left']],
@@ -34,10 +41,8 @@ def register_callbacks(app):
         
         return [f"{action.replace('_', ' ').capitalize()} iniciado"] + active_classes
 
-   
-    # Cámara
-    from dash import html, dcc
-    
+   # Cámara
+
     @app.callback(
         Output('images-container', 'children'),
         [Input('capture-btn', 'n_clicks')],
@@ -46,6 +51,10 @@ def register_callbacks(app):
     )
     def handle_capture(n_clicks, children):
         if n_clicks:
+            # Asegura que children sea una lista si llega como None
+            if children is None:
+                children = []
+
             capture_image()  # Función que toma la foto
             try:
                 with open("/home/ttm/TT2_Photovoltaic_Roof_Cleaner/Pruebas/RASP/Camara/current_image.jpg", "rb") as image_file:

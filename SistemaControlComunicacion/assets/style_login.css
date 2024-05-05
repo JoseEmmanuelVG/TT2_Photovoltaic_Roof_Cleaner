@@ -1,0 +1,105 @@
+/* assets/style_login.css */
+/* Estilo global para el fondo de la página */
+body {
+    background-color: #000; /* Fondo negro para toda la página */
+}
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: auto; /* Adjusted to auto to only cover the form area */
+    background: rgba(34, 34, 34, 0.85); /* Semi-transparent background */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    margin: auto;
+}
+
+.robot-title {
+    color: #fff;
+    opacity: 0.9;
+    font-weight: 300; /* Lighter font-weight for elegance */
+    margin-bottom: 30px; /* Added margin for spacing */
+}
+
+.login-title {
+    color: #e91e63; /* Match button color */
+    font-weight: bold;
+}
+
+.login-input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 2px solid #e91e63; /* Pink border */
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+}
+
+.login-button {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0; /* Ensures equal spacing around button */
+    border: none;
+    border-radius: 5px;
+    background-color: #e91e63;
+    color: white;
+    cursor: pointer;
+}
+
+.login-button:hover {
+    background-color: #d81b60;
+}
+
+.text-light {
+    color: #fff;
+}
+
+
+
+/* assets/style_menu.css */
+.menu-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #333;
+    color: #fff;
+}
+
+.menu-title {
+    margin-bottom: 50px;
+    color: #b5ece0;
+    font-size: 24px; /* Tamaño más grande para el título */
+    text-transform: uppercase; /* Texto en mayúsculas para un aspecto más formal */
+    text-align: center;
+}
+
+.menu-button {
+    width: 80%;
+    padding: 15px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    font-size: 18px; /* Fuente más grande para los botones */
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Transición suave al cambiar de color */
+}
+
+.menu-button:hover {
+    background-color: #0056b3;
+}
+
+.menu-description {
+    font-size: 20px;
+    color: #f0e7e7; /* Color más claro para las descripciones */
+    margin: 10px 0;
+    padding: 0 20px; /* Padding horizontal para alinear texto */
+    text-align: justify; /* Justificar el texto para una mejor lectura */
+}

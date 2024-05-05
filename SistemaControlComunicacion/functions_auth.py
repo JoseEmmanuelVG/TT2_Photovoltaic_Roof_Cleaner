@@ -2,14 +2,14 @@ from flask_login import UserMixin, LoginManager, login_user, logout_user
 from flask_bcrypt import Bcrypt
 from dash import Dash
 
-# Suponiendo que este es tu usuario y contraseña encriptada
+# Usuario y contraseña encrytados con bcrypt
 USERS = {
-    "usuario": "hashed_pw_aquí"
+    "TTM_JEVG": "$2b$12$fifc8eb4cjSY/tYwewISa.7V8q2m051yemDQcsUVVAG3r9T4W/0DC"
 }
 
 app = Dash(__name__)
 server = app.server  # Exponer el servidor Flask para Flask-Login
-bcrypt = Bcrypt(server)  # Inicializar Bcrypt en el servidor Flask
+bcrypt = Bcrypt(server)
 login_manager = LoginManager()
 login_manager.init_app(server)
 
@@ -23,17 +23,17 @@ def load_user(user_id):
         return User(user_id)
     return None
 
-# Función para verificar la contraseña
 def check_password(username, password):
-    if username in USERS and bcrypt.check_password_hash(USERS[username], password):
-        return True
+    if username in USERS:
+        return bcrypt.check_password_hash(USERS[username], password)
     return False
 
-# Ejemplo de función para iniciar sesión
-# Necesitarás implementar tu lógica para obtener los datos del formulario de inicio de sesión
 def login(username, password):
     if check_password(username, password):
         user = User(username)
         login_user(user)
         return True
     return False
+
+
+
