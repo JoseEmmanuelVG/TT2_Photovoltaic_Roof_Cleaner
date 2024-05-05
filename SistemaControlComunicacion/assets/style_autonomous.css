@@ -1,0 +1,65 @@
+/* assets/style_autonomous.css */
+.autonomous-title {
+    color: #e91e63;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    color: #fff;
+    font-weight: bold;
+}
+
+.status-text {
+    font-weight: bold;
+    color: #fff;
+}
+
+.control-button {
+    margin-top: 10px;
+}
+
+.input-pink {
+    border: 2px solid #e91e63;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: #fff;
+    background-color: #333;
+}
+
+.menu-control {
+    width: 100%;
+}
+
+.left-button, .right-button {
+    width: 150px;
+}
+
+.top-row-buttons {
+    position: fixed;
+    top: 10px;
+    left: 0;
+    right: 0;
+    margin-left: 20px;
+    margin-right: 100px;
+}
+
+.image-section {
+    background-color: #fff;
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-title {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.image-box {
+    height: 200px; /* Adjust as needed */
+    background-color: #e0e0e0; /* Placeholder for image */
+}

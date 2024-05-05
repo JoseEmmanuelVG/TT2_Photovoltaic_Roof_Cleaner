@@ -1,4 +1,18 @@
-/* Estilo general de los botones */
+/* assets/style_autonomous.css */
+h1 {
+    display: block;
+    font-size: 2em;
+    margin-block-start: 0.67em;
+    margin-block-end: 0.67em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+    unicode-bidi: isolate;
+    color: #b77fb2;
+}
+
+
+
 button {
     cursor: pointer;
     padding: 10px 20px;
@@ -14,12 +28,10 @@ button:hover {
     background-color: #0056b3;
 }
 
-/* Estilo específico cuando un botón está 'activo' */
 button.active {
     background-color: #28a745; /* Verde para indicar actividad */
 }
 
-/* Estilo para el botón de paro de emergencia */
 #emergency-stop-btn {
     background-color: red;
     color: white;
@@ -29,11 +41,26 @@ button.active {
     background-color: #ff0000;
 }
 
-/* Div para mensajes de estado */
-#status-div {
+.status-div {
     padding: 10px;
     border-radius: 5px;
     background-color: #f8f9fa;
     color: #333;
     border: 1px solid #ccc;
 }
+
+.slider-container {
+    margin-bottom: 20px;
+}
+
+.control-label {
+    color: #fff;
+    font-weight: bold;
+}
+
+.image-section, .status-div, .slider-container, .control-button {
+    background-color: #333;
+    color: #fff;
+}
+
+/* Customize further based on your requirements */

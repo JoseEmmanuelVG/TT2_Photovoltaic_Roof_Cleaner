@@ -2,7 +2,7 @@
 from dash import Dash, html, dcc, callback, Output, Input
 import dash_bootstrap_components as dbc
 from flask_login import login_required, current_user
-import ui_definition_remote, ui_definition_login_menu
+import ui_definition_remote, ui_definition_login_menu, ui_definition_autonomous
 import callbacks_remote, callbacks_auth
 from dotenv import load_dotenv
 import os
@@ -63,6 +63,10 @@ def display_page(pathname):
         if not current_user.is_authenticated:
             return '/login'
         return ui_definition_remote.create_layout()
+    elif pathname == '/automatic':
+        if not current_user.is_authenticated:
+            return '/login'
+        return ui_definition_autonomous.create_layout()
     else:
         return "404 Page not found. Return to Login", dcc.Link('Go to Login', href='/login')
 
