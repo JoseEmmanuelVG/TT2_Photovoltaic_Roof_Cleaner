@@ -64,3 +64,53 @@ button.active {
 }
 
 /* Customize further based on your requirements */
+
+
+
+
+/* assets/style_remote.css */
+.header-title {
+    color: #e91e63; /* Rosado para el título */
+    text-align: center;
+}
+
+.sensor-display, .control-label, .connection-status {
+    color: #fff; /* Blanco para mejor visibilidad */
+    font-weight: bold;
+}
+
+.control-button, .remote-btn, .emergency-btn, .capture-btn {
+    cursor: pointer;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    background-color: #007BFF;
+    transition: background-color 0.3s ease;
+}
+
+.control-button:hover, .remote-btn:hover, .emergency-btn:hover, .capture-btn:hover {
+    background-color: #0056b3;
+}
+
+.emergency-btn {
+    background-color: red;
+}
+
+.emergency-btn:hover {
+    background-color: #ff0000;
+}
+
+.slider-container {
+    margin-bottom: 20px;
+}
+
+.connection-status, .sensor-display {
+    background-color: #333; /* Dark background for contrast */
+}
+
+.image-section, .status-div, .slider-container, .control-button {
+    background-color: #333; /* Consistent dark theme for all control elements */
+    color: #fff;
+}
