@@ -1,0 +1,411 @@
+///////////function:
+import serial
+import time
+from gpiozero import Device, OutputDevice
+from gpiozero.pins.lgpio import LGPIOFactory
+import threading
+import os
+import base64
+import subprocess
+
+# Inicializa el puerto serial
+ser = serial.Serial('/dev/ttyUSB0', 9600)  # Asegúrate de usar el puerto correcto
+
+def leer_datos_serial():
+    if ser.inWaiting() > 0:
+        linea = ser.readline().decode('utf-8').strip()
+        datos = linea.split(',')
+
+        # Verifica si hay datos de sensores
+        if len(datos) == 6:  # 4 distancias + 2 datos DHT11
+            return datos
+        else:
+            return None
+    else:
+        return None
+
+def enviar_comando(comando):
+    ser.write(f"{comando}\n".encode('utf-8'))
+
+def handle_movement(action, pwm_value=50):
+    if action == 'forward':
+        enviar_comando(f"A_{pwm_value}")
+    elif action == 'backward':
+        enviar_comando(f"R_{pwm_value}")
+    elif action == 'stop':
+        enviar_comando("D")
+
+def emergency_stop():
+    enviar_comando("D")
+
+def control_new_motor(action, pwm_value):
+    if action == 'start_forward':
+        enviar_comando(f"A_{pwm_value}")
+    elif action == 'start_reverse':
+        enviar_comando(f"R_{pwm_value}")
+    elif action == 'stop':
+        enviar_comando("D")
+
+# Motores desplazamiento 
+Device.pin_factory = LGPIOFactory()
+
+class StepperMotor:
+    def __init__(self, pul_pin, dir_pin, ena_pin):
+        self.PUL = OutputDevice(pul_pin)
+        self.DIR = OutputDevice(dir_pin)
+        self.ENA = OutputDevice(ena_pin, initial_value=False)
+        self.running = False
+        self.thread = None
+
+    def move(self, direction, delay=0.0001):
+        self.DIR.value = direction
+        self.ENA.on()
+        while self.running:
+            self.PUL.on()
+            time.sleep(delay)
+            self.PUL.off()
+            time.sleep(delay)
+        if not self.running:
+            self.ENA.off()
+
+    def start_moving(self, direction, delay=0.0001):
+        if not self.running:
+            self.running = True
+            self.thread = threading.Thread(target=self.move, args=(direction, delay))
+            self.thread.start()
+
+    def stop_moving(self, hold=False):
+        self.running = False
+        if self.thread is not None:
+            self.thread.join()
+        if hold:
+            self.ENA.on()
+        else:
+            self.ENA.off()
+
+motor1 = StepperMotor(23, 24, 25)
+motor2 = StepperMotor(16, 20, 21)
+motor3 = StepperMotor(17, 27, 22)
+motor4 = StepperMotor(5, 6, 26)
+
+current_movement = None
+
+def handle_movement(action, hold=False):
+    global current_movement
+    movements = {
+        'forward': (True, False, True, False),
+        'backward': (False, True, False, True),
+        'left': (False, False, True, True),
+        'right': (True, True, False, False),
+        'rotate_right': (True, True, True, True),
+        'rotate_left': (False, False, False, False),
+    }
+
+    if action == current_movement:
+        stop_all_motors(hold=True)  # Stops all motors but holds the torque
+        current_movement = None
+    else:
+        stop_all_motors(hold=True)  # Ensure motors are held with torque when stopped
+        direction = movements.get(action)
+        if direction:
+            motor1.start_moving(direction[0])
+            motor2.start_moving(direction[1])
+            motor3.start_moving(direction[2])
+            motor4.start_moving(direction[3])
+            current_movement = action
+
+def stop_all_motors(hold=False):
+    motor1.stop_moving(hold)
+    motor2.stop_moving(hold)
+    motor3.stop_moving(hold)
+    motor4.stop_moving(hold)
+
+def emergency_stop():
+    stop_all_motors(hold=True)
+    global current_movement
+    current_movement = None  # Resets the current movement state
+    print("Emergency: All motors have been stopped.")
+
+stop_all_motors(hold=True)
+
+# Cámara
+import os
+import base64
+import subprocess
+
+# Directorio de almacenamiento de imágenes
+IMAGE_DIR = '/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/assets'
+
+def save_image(image_data, prefix, index):
+    # Asegúrate de que el directorio de imágenes existe
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    
+    file_name = f"{prefix}_{index}.jpg"
+    file_path = os.path.join(IMAGE_DIR, file_name)
+    with open(file_path, "wb") as f:
+        f.write(base64.b64decode(image_data.split(",")[1]))
+    print(f"Image saved to {file_path}")  # Línea de depuración
+    return file_name
+
+def capture_image(image_name):
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    file_path = os.path.join(IMAGE_DIR, image_name)
+    subprocess.run(['libcamera-still', '-o', file_path])
+    with open(file_path, "rb") as f:
+        encoded_image = base64.b64encode(f.read()).decode()
+    return f"data:image/jpeg;base64,{encoded_image}"
+
+
+
+
+
+
+
+
+# CONEXION WIFI
+import time
+import subprocess
+
+
+def is_wifi_connected():
+    """
+    Verifica si hay una conexión WiFi activa.
+    """
+    try:
+        result = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID', 'dev', 'wifi'], stdout=subprocess.PIPE)
+        output = result.stdout.decode('utf-8').strip()
+        print("Salida de nmcli:", output)  # Imprime la salida de nmcli para depuración
+        active_connections = output.split('\n')
+        for connection in active_connections:
+            print("Revisando conexión:", connection)  # Imprime cada línea para depuración
+            if 'sí' in connection:
+                return True
+    except Exception as e:
+        print(f"Error verificando la conexión WiFi: {e}")
+    return False
+
+
+
+
+
+
+
+
+
+////////////calbacks:
+from dash.dependencies import Input, Output, State
+import dash
+from functions_remote import handle_movement, emergency_stop, leer_datos_serial, control_new_motor, capture_image, save_image, is_wifi_connected
+from dash import html
+
+# Variables para almacenar las imágenes
+images_before = []
+images_after = []
+
+def register_callbacks(app):
+    @app.callback(
+        [Output('status-div', 'children')] +
+        [Output(f'{btn_id}-btn', 'className') for btn_id in ['forward', 'backward', 'left', 'right', 'rotate-right', 'rotate-left']],
+        [Input(f'{btn_id}-btn', 'n_clicks_timestamp') for btn_id in ['forward', 'backward', 'left', 'right', 'rotate-right', 'rotate-left']] + 
+        [Input('emergency-stop-btn', 'n_clicks'),
+         Input('start-forward-btn', 'n_clicks'),
+         Input('start-reverse-btn', 'n_clicks'),
+         Input('stop-btn', 'n_clicks'),
+         Input('pwm-slider', 'value')],
+        prevent_initial_call=True
+    )
+    def update_output(*args):
+        ctx = dash.callback_context
+
+        if not ctx.triggered:
+            return ["No buttons yet clicked"] + [""] * 6
+        
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        action = button_id.replace('-btn', '').replace('rotate-right', 'rotate_right').replace('rotate-left', 'rotate_left')
+        
+        if button_id == 'emergency-stop-btn':
+            emergency_stop()
+            return ["EMERGENCY STOP ACTIVATED!"] + [""] * 6
+
+        pwm_value = args[-1]  # The last argument is the PWM slider value
+
+        if button_id == 'start-forward-btn':
+            control_new_motor('start_forward', pwm_value)
+            return [f"Motor arrancado adelante al {pwm_value}% PWM"] + [""] * 6
+        elif button_id == 'start-reverse-btn':
+            control_new_motor('start_reverse', pwm_value)
+            return [f"Motor arrancado en reversa al {pwm_value}% PWM"] + [""] * 6
+        elif button_id == 'stop-btn':
+            control_new_motor('stop', 0)
+            return ["Motor detenido"] + [""] * 6
+
+        # Update motors
+        handle_movement(action)
+        
+        # Determine the active button
+        btn_ids = ['forward', 'backward', 'left', 'right', 'rotate-right', 'rotate-left']
+        active_classes = ['active' if f'{btn}-btn' == button_id else '' for btn in btn_ids]
+        
+        return [f"{action.replace('_', ' ').capitalize()} iniciado"] + active_classes
+
+    @app.callback(
+        [Output('images-container-before', 'children'),
+         Output('images-container-after', 'children')],
+        [Input('capture-btn-before', 'n_clicks'),
+         Input('capture-btn-after', 'n_clicks')],
+        [State('images-container-before', 'children'),
+         State('images-container-after', 'children')]
+    )
+    def handle_capture(before_clicks, after_clicks, children_before, children_after):
+        global images_before, images_after
+
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return children_before, children_after
+
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if button_id == 'capture-btn-before':
+            images_list = images_before
+            prefix = "REMOTE_ANTES"
+        else:
+            images_list = images_after
+            prefix = "REMOTE_DESPUES"
+
+        # Capturar imagen y actualizar la lista
+        image_index = len(images_list) + 1
+        if image_index > 17:
+            image_index = 1
+        image_name = f"{prefix}_{image_index}.jpg"
+        new_image_data = capture_image(image_name)
+        file_name = save_image(new_image_data, prefix, image_index)
+        images_list.append(file_name)
+
+        if button_id == 'capture-btn-before':
+            images_before = images_list
+            children_before = [html.Img(src=f'assets/{file_name}', style={'width': '100%', 'padding-top': '10px'}) for file_name in images_before]
+            return children_before, children_after
+        else:
+            images_after = images_list
+            children_after = [html.Img(src=f'assets/{file_name}', style={'width': '100%', 'padding-top': '10px'}) for file_name in images_after]
+            return children_before, children_after
+
+
+
+
+
+    @app.callback(
+        [Output('front-left-sensor', 'children'),
+         Output('front-right-sensor', 'children'),
+         Output('back-left-sensor', 'children'),
+         Output('back-right-sensor', 'children'),
+         Output('humidity', 'children'),
+         Output('temperature', 'children')],
+        [Input('interval-component', 'n_intervals')]
+    )
+    def update_sensors(n):
+        datos = leer_datos_serial()
+        if datos:
+            return [
+                html.Div(f"Delante izquierdo: {datos[0]} cm", style={'color': 'white'}),
+                html.Div(f"Delante derecho: {datos[1]} cm", style={'color': 'white'}),
+                html.Div(f"Atrás izquierdo: {datos[2]} cm", style={'color': 'white'}),
+                html.Div(f"Atrás derecho: {datos[3]} cm", style={'color': 'white'}),
+                html.Div(f"Humedad: {datos[4]} %", style={'color': 'white'}),
+                html.Div(f"Temperatura: {datos[5]} °C", style={'color': 'white'})
+            ]
+        else:
+            return ["Esperando datos...", "Esperando datos...", "Esperando datos...", "Esperando datos...", "Esperando datos...", "Esperando datos..."]
+
+
+
+
+####### WIFI
+    @app.callback(
+        Output('wifi-status', 'children'),
+        Input('interval-component', 'n_intervals')
+    )
+    def update_wifi_status(n):
+        if is_wifi_connected():
+            return html.Span("Conectado a WiFi", style={'color': 'green'})
+        else:
+            return html.Span("No Conectado a WiFi", style={'color': 'red'})
+
+
+
+
+
+
+
+
+            //////////////////////ui_def:
+            from dash import html, dcc
+import dash_bootstrap_components as dbc
+
+def create_layout():
+    return html.Div([
+        dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0),
+        html.H1("Control Remoto del Robot", className="header-title"),
+        html.Div([
+            html.Div("Humedad: X %", id='humidity', className='sensor-data', style={'backgroundColor': 'blue', 'color': 'white', 'textAlign': 'center', 'padding': '10px'}),
+            html.Div("Temperatura: X °C", id='temperature', className='sensor-data', style={'backgroundColor': 'red', 'color': 'white', 'textAlign': 'center', 'padding': '10px'}),
+        ], style={'display': 'flex', 'justifyContent': 'space-around', 'alignItems': 'center', 'margin': '20px 0'}),
+        html.Div([
+            html.Label("Control de PWM", style={'textAlign': 'center', 'width': '100%'}),
+            html.Div([
+                dcc.Slider(
+                    id='pwm-slider',
+                    min=1,
+                    max=100,
+                    step=1,
+                    value=50,
+                    marks={i: f'{i}%' for i in range(0, 101, 10)},
+                    className='slider',
+                    updatemode='drag'
+                )
+            ], style={'width': '80%', 'margin': 'auto'})
+        ], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'margin': '20px 0'}),
+        html.Div([
+            dbc.Button("ARRANQUE DELANTE", id='start-forward-btn', className='remote-btn', style={'width': '30%', 'height': '50px', 'margin': '5px'}),
+            dbc.Button("ARRANQUE REVERSA", id='start-reverse-btn', className='remote-btn', style={'width': '30%', 'height': '50px', 'margin': '5px'}),
+            dbc.Button("PARO", id='stop-btn', className='remote-btn', style={'width': '30%', 'height': '50px', 'margin': '5px'}),
+        ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'margin': '10px 0'}),
+        dbc.Container([
+            html.Div([
+                html.Div("Delante izquierdo: X cm", id='front-left-sensor', className='sensor-data', style={'backgroundColor': 'green', 'color': 'white', 'textAlign': 'center', 'padding': '10px', 'gridArea': 'front-left'}),
+                dbc.Button("ADELANTE", id='forward-btn', className='remote-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'forward'}),
+                html.Div("Delante derecho: X cm", id='front-right-sensor', className='sensor-data', style={'backgroundColor': 'green', 'color': 'white', 'textAlign': 'center', 'padding': '10px', 'gridArea': 'front-right'}),
+                dbc.Button("IZQUIERDA", id='left-btn', className='remote-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'left'}),
+                dbc.Button("ROTAR IZQUIERDA", id='rotate-left-btn', className='remote-btn rotate-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'rotate-left'}),
+                dbc.Button("ROTAR DERECHA", id='rotate-right-btn', className='remote-btn rotate-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'rotate-right'}),
+                dbc.Button("DERECHA", id='right-btn', className='remote-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'right'}),
+                html.Div("Atrás izquierdo: X cm", id='back-left-sensor', className='sensor-data', style={'backgroundColor': 'green', 'color': 'white', 'textAlign': 'center', 'padding': '10px', 'gridArea': 'back-left'}),
+                dbc.Button("ATRÁS", id='backward-btn', className='remote-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'back'}),
+                html.Div("Atrás derecho: X cm", id='back-right-sensor', className='sensor-data', style={'backgroundColor': 'green', 'color': 'white', 'textAlign': 'center', 'padding': '10px', 'gridArea': 'back-right'}),
+                dbc.Button("PARO DE EMERGENCIA", id='emergency-stop-btn', className='emergency-btn', style={'backgroundColor': 'red', 'color': 'white', 'width': '100%', 'height': '100px', 'gridArea': 'emergency'}),
+                dbc.Button("TOMAR FOTO ANTES", id='capture-btn-before', className='capture-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'capture-before'}),
+                dbc.Button("TOMAR FOTO DESPUÉS", id='capture-btn-after', className='capture-btn', style={'width': '100%', 'height': '100px', 'gridArea': 'capture-after'}),
+            ], style={
+                'display': 'grid',
+                'gridTemplateColumns': '1fr 1fr 1fr 1fr',
+                'gridTemplateRows': 'auto auto auto auto auto',
+                'gridTemplateAreas': '''
+                    'front-left forward forward front-right'
+                    'left rotate-left rotate-right right'
+                    'back-left back back back-right'
+                    'emergency emergency emergency emergency'
+                    'capture-before capture-before capture-after capture-after'
+                ''',
+                'gridGap': '10px',
+                'justifyContent': 'center',
+                'alignItems': 'center',
+                'padding': '20px'
+            }),
+            dbc.Row([
+                dbc.Col(html.Div(id='images-container-before', style={'width': '100%', 'maxWidth': '600px', 'marginTop': '20px'}), width=6),
+                dbc.Col(html.Div(id='images-container-after', style={'width': '100%', 'maxWidth': '600px', 'marginTop': '20px'}), width=6)
+            ], justify='center', align='center'),
+            dbc.Row([
+                dbc.Col(html.Div(id='status-div', className='status-div', style={'marginTop': '20px', 'textAlign': 'center'}), width=12),
+            ], justify='center', align='center')
+        ])
+    ], style={'width': '100%', 'maxWidth': '900px', 'margin': '0 auto'})

@@ -1,29 +1,24 @@
-from gpiozero import OutputDevice, PWMOutputDevice
+from gpiozero import PWMOutputDevice, OutputDevice
 from time import sleep
 
 # Definir los pines de conexión
-pinPWM = 15           # Puerto de control de velocidad (PWM)
-pinDireccion = 14     # Control de avance y retroceso
+pinPWM = 15    # Puerto de control de velocidad (PWM)
+pinDireccion = 14  # Control de avance y retroceso
 
-# Configurar los dispositivos
-motor_pwm = PWMOutputDevice(pinPWM, frequency=1000, initial_value=0.5)  # Inicializa el PWM al 50% (128 de 255 aprox.)
-motor_dir = OutputDevice(pinDireccion, initial_value=False)  # Inicializa dirección en falso (avance)
+# Configurar los pines
+pwm = PWMOutputDevice(pinPWM)
+direccion = OutputDevice(pinDireccion)
 
-try:
-    while True:
-        # Motor en una dirección a velocidad media
-        motor_dir.off()  # Avance (CW)
-        motor_pwm.value = 0.5  # Establecer PWM al 50% de ciclo de trabajo
-        sleep(5)  # Esperar 5 segundos
+# Establecer la dirección inicial del motor
+direccion.off()  # Baja para avance (CW), Alta para retroceso (CCW)
 
-        # Cambiar la dirección del motor
-        motor_dir.on()  # Retroceso (CCW)
-        sleep(5)  # Esperar 5 segundos
+while True:
+    # Establecer la velocidad del motor
+    # Puedes cambiar el valor '0.5' con cualquier valor entre 0 (motor parado) y 1 (velocidad máxima)
+    pwm.value = 0.5
 
-        # Volver a la dirección original
-        motor_dir.off()  # Avance (CW)
-        
-except KeyboardInterrupt:
-    # Asegurarse de apagar el motor antes de salir
-    motor_pwm.close()
-    motor_dir.close()
+    # Cambiar la dirección después de un tiempo
+    sleep(5)  # El motor gira en una dirección por 5 segundos
+    direccion.on()  # Cambiar la dirección de rotación
+    sleep(5)  # El motor gira en la dirección opuesta por 5 segundos
+    direccion.off()  # Volver a la dirección original

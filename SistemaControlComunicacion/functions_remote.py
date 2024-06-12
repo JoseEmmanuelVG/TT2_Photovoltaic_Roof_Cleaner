@@ -1,8 +1,51 @@
+import serial
+import time
 from gpiozero import Device, OutputDevice
 from gpiozero.pins.lgpio import LGPIOFactory
 import threading
-import time
+import os
+import base64
+import subprocess
 
+# Inicializa el puerto serial
+ser = serial.Serial('/dev/ttyUSB0', 9600)  # Asegúrate de usar el puerto correcto
+
+def leer_datos_serial():
+    if ser.inWaiting() > 0:
+        linea = ser.readline().decode('utf-8').strip()
+        datos = linea.split(',')
+
+        # Verifica si hay datos de sensores
+        if len(datos) == 6:  # 4 distancias + 2 datos DHT11
+            return datos
+        else:
+            return None
+    else:
+        return None
+
+def enviar_comando(comando):
+    ser.write(f"{comando}\n".encode('utf-8'))
+
+def handle_movement(action, pwm_value=50):
+    if action == 'forward':
+        enviar_comando(f"A_{pwm_value}")
+    elif action == 'backward':
+        enviar_comando(f"R_{pwm_value}")
+    elif action == 'stop':
+        enviar_comando("D")
+
+def emergency_stop():
+    enviar_comando("D")
+
+def control_new_motor(action, pwm_value):
+    if action == 'start_forward':
+        enviar_comando(f"A_{pwm_value}")
+    elif action == 'start_reverse':
+        enviar_comando(f"R_{pwm_value}")
+    elif action == 'stop':
+        enviar_comando("D")
+
+# Motores desplazamiento 
 Device.pin_factory = LGPIOFactory()
 
 class StepperMotor:
@@ -84,17 +127,59 @@ def emergency_stop():
 
 stop_all_motors(hold=True)
 
-
-# Camara 
+# Cámara
 import os
-from dash import Dash, dcc, html
-from dash.dependencies import Input, Output
 import base64
 import subprocess
 
-def capture_image():
+# Directorio de almacenamiento de imágenes
+IMAGE_DIR = '/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/assets'
 
-    # Asegúrate de que el directorio de trabajo actual es donde deseas guardar las imágenes
-    os.chdir('/home/ttm/TT2_Photovoltaic_Roof_Cleaner/Pruebas/RASP/Camara/')
-    # Guarda la imagen en un archivo temporal
-    subprocess.run(['libcamera-still', '-o', 'current_image.jpg'])
+def save_image(image_data, prefix, index):
+    # Asegúrate de que el directorio de imágenes existe
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    
+    file_name = f"{prefix}_{index}.jpg"
+    file_path = os.path.join(IMAGE_DIR, file_name)
+    with open(file_path, "wb") as f:
+        f.write(base64.b64decode(image_data.split(",")[1]))
+    print(f"Image saved to {file_path}")  # Línea de depuración
+    return file_name
+
+def capture_image(image_name):
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    file_path = os.path.join(IMAGE_DIR, image_name)
+    subprocess.run(['libcamera-still', '-o', file_path])
+    with open(file_path, "rb") as f:
+        encoded_image = base64.b64encode(f.read()).decode()
+    return f"data:image/jpeg;base64,{encoded_image}"
+
+
+
+
+
+
+
+
+# CONEXION WIFI
+import time
+import subprocess
+
+
+def is_wifi_connected():
+    """
+    Verifica si hay una conexión WiFi activa.
+    """
+    try:
+        result = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID', 'dev', 'wifi'], stdout=subprocess.PIPE)
+        output = result.stdout.decode('utf-8').strip()
+        print("Salida de nmcli:", output)  # Imprime la salida de nmcli para depuración
+        active_connections = output.split('\n')
+        for connection in active_connections:
+            print("Revisando conexión:", connection)  # Imprime cada línea para depuración
+            if 'sí' in connection:
+                return True
+    except Exception as e:
+        print(f"Error verificando la conexión WiFi: {e}")
+    return False
+
