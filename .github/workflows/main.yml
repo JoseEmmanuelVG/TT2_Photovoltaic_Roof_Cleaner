@@ -1,0 +1,18 @@
+name: Revision de Pull Requests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkear usuario de PR
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            if (context.payload.pull_request.user.login !== 'JoseEmmanuelVG') {
+              core.setFailed('Solo el administrador puede modificar la rama principal.');
+            }
