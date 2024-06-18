@@ -10,7 +10,7 @@ def leer_datos_serial():
         datos = linea.split(',')
 
         # Verifica si hay datos de sensores
-        if len(datos) == 6:  # 4 distancias + 2 datos DHT11
+        if len(datos) == 7:  # 4 distancias + 2 datos DHT11
             return datos
         else:
             return None
@@ -29,6 +29,7 @@ while True:
         print(f"Atrás derecha: {datos[3]} cm")
         print(f"Humedad: {datos[4]} %")
         print(f"Temperatura: {datos[5]} *C")
+        print(f"Voltaje Fuente: {datos[6]} V")
 
     command = input("Ingresa un comando (A_xx: adelante xx% PWM, R_xx: atrás xx% PWM, D: detener, S: salir): ")
 

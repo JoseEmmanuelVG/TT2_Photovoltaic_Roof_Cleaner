@@ -1,0 +1,337 @@
+Muy bien, comencemos a realizar los callbacks para que muestren o accionen la información del UI (Ya asi como esta sin hacer cambios) acorde a mis funciones siguientes:
+
+//////////functions:
+from flask_login import UserMixin, LoginManager, login_user, logout_user
+from flask_bcrypt import Bcrypt
+from dash import Dash
+
+
+import serial
+import time
+from gpiozero import Device, OutputDevice
+from gpiozero.pins.lgpio import LGPIOFactory
+import threading
+import os
+import base64
+import subprocess
+
+
+
+
+# Usuario y contraseña encrytados con bcrypt
+USERS = {
+    "TTM_JEVG": "$2b$12$fifc8eb4cjSY/tYwewISa.7V8q2m051yemDQcsUVVAG3r9T4W/0DC"
+}
+
+app = Dash(__name__)
+server = app.server  # Exponer el servidor Flask para Flask-Login
+bcrypt = Bcrypt(server)
+login_manager = LoginManager()
+login_manager.init_app(server)
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    if user_id in USERS:
+        return User(user_id)
+    return None
+
+def check_password(username, password):
+    if username in USERS:
+        return bcrypt.check_password_hash(USERS[username], password)
+    return False
+
+def login(username, password):
+    if check_password(username, password):
+        user = User(username)
+        login_user(user)
+        return True
+    return False
+
+
+# Inicializa el puerto serial
+ser = serial.Serial('/dev/ttyUSB0', 9600)  # Asegúrate de usar el puerto correcto
+
+def leer_datos_serial():
+    if ser.inWaiting() > 0:
+        linea = ser.readline().decode('utf-8').strip()
+        datos = linea.split(',')
+
+        # Verifica si hay datos de sensores
+        if len(datos) == 7:  # 4 distancias + 2 datos DHT11 + 1 Voltaje Fuente
+            return datos
+        else:
+            return None
+    else:
+        return None
+
+def enviar_comando(comando):
+    ser.write(f"{comando}\n".encode('utf-8'))
+
+def handle_movement(action, pwm_value=50):
+    if action == 'forward':
+        enviar_comando(f"A_{pwm_value}")
+    elif action == 'backward':
+        enviar_comando(f"R_{pwm_value}")
+    elif action == 'stop':
+        enviar_comando("D")
+
+def emergency_stop():
+    enviar_comando("D")
+
+def control_new_motor(action, pwm_value):
+    if action == 'start_forward':
+        enviar_comando(f"A_{pwm_value}")
+    elif action == 'start_reverse':
+        enviar_comando(f"R_{pwm_value}")
+    elif action == 'stop':
+        enviar_comando("D")
+
+
+
+
+# Cámara
+import os
+import base64
+import subprocess
+
+# Directorio de almacenamiento de imágenes
+IMAGE_DIR = '/home/ttm/TT2_Photovoltaic_Roof_Cleaner/SistemaControlComunicacion/assets'
+
+def save_image(image_data, prefix, index):
+    # Asegúrate de que el directorio de imágenes existe
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    
+    file_name = f"{prefix}_{index}.jpg"
+    file_path = os.path.join(IMAGE_DIR, file_name)
+    with open(file_path, "wb") as f:
+        f.write(base64.b64decode(image_data.split(",")[1]))
+    print(f"Image saved to {file_path}")  # Línea de depuración
+    return file_name
+
+def capture_image(image_name):
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    file_path = os.path.join(IMAGE_DIR, image_name)
+    subprocess.run(['libcamera-still', '-o', file_path])
+    with open(file_path, "rb") as f:
+        encoded_image = base64.b64encode(f.read()).decode()
+    return f"data:image/jpeg;base64,{encoded_image}"
+
+
+
+# CONEXION WIFI
+import time
+import subprocess
+
+
+def is_wifi_connected():
+    """
+    Verifica si hay una conexión WiFi activa.
+    """
+    try:
+        result = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID', 'dev', 'wifi'], stdout=subprocess.PIPE)
+        output = result.stdout.decode('utf-8').strip()
+        print("Salida de nmcli:", output)  # Imprime la salida de nmcli para depuración
+        active_connections = output.split('\n')
+        for connection in active_connections:
+            print("Revisando conexión:", connection)  # Imprime cada línea para depuración
+            if 'sí' in connection:
+                return True
+    except Exception as e:
+        print(f"Error verificando la conexión WiFi: {e}")
+    return False
+
+
+########### sensores 2 ultra
+from gpiozero import DistanceSensor
+import threading
+import time
+
+# Define los pines para los sensores de distancia
+sensor1 = DistanceSensor(echo=4, trigger=18, max_distance=4, threshold_distance=0.05)
+sensor2 = DistanceSensor(echo=12, trigger=13, max_distance=4, threshold_distance=0.05)
+
+# Contenedor mutable para las distancias de los sensores
+sensor_distances = [0, 0]  # Index 0 for sensor1, index 1 for sensor2
+
+def calibrate_distance(distance):
+    """
+    Ajustar la calibración si es necesario
+    """
+    return round(distance * 100 - 0.5, 2)  # Convertir la distancia de metros a centímetros y ajustar
+
+# Función para leer las distancias de los sensores
+def read_sensors():
+    while True:
+        try:
+            sensor_distances[0] = calibrate_distance(sensor1.distance)
+            sensor_distances[1] = calibrate_distance(sensor2.distance)
+            print(f"Reading Sensors - Sensor 1: {sensor_distances[0]} cm, Sensor 2: {sensor_distances[1]} cm")  # Debugging line
+        except Exception as e:
+            print(f"Error reading sensors: {e}")
+        time.sleep(1)
+
+# Iniciar el hilo para la lectura de los sensores
+sensor_thread = threading.Thread(target=read_sensors)
+sensor_thread.daemon = True
+sensor_thread.start()
+
+
+
+
+######## FUNCIONES BOMBAS DE AGUA, FLOTAORES Y ACTUADORES
+
+# funciones flotadores: 
+from gpiozero import Button, LED
+
+# Configurar los pines GPIO7 y GPIO8 como entradas pull-down
+flotador7 = Button(7, pull_up=False)
+flotador8 = Button(8, pull_up=False)
+
+# Definir funciones que se ejecutarán al presionar los botones
+def flotador7_pressed():
+    print("flotador1 LevelDown ON")
+
+def flotador8_pressed():
+    print("flotador2 LevelUp ON")
+
+# Asociar las funciones a los eventos de presionar los botones
+flotador7.when_pressed = flotador7_pressed
+flotador8.when_pressed = flotador8_pressed
+
+# funciones bomba de agua:
+# Configurar el pin GPIO19 como una salida
+relay = LED(19)
+
+# funciones actuadores:
+# Configurar los pines GPIO2 y GPIO3 como salidas
+actuadorPin1 = LED(2)
+actuadorPin2 = LED(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////callbacks:
+from dash import dcc, html, Input, Output, callback, State
+from dash.exceptions import PreventUpdate
+from flask_login import login_user, current_user
+import functions_auth
+
+def register_auth_callbacks(app):
+    @app.callback(
+        Output('url', 'pathname'),
+        [Input('login-button', 'n_clicks')],
+        [State('username-login', 'value'), State('password-login', 'value')],
+        prevent_initial_call=True
+    )
+    def handle_login(n_clicks, username, password):
+        if n_clicks is None:
+            raise PreventUpdate
+        
+        if functions_auth.login(username, password):
+            return '/menu'
+        return '/login'
+
+
+
+
+
+ui_def:
+from dash import html, dcc
+import dash_bootstrap_components as dbc
+
+def create_layout():
+    return html.Div([
+        dcc.Location(id='url', refresh=False),
+        dbc.Container([
+            dbc.Row([
+                dbc.Col(html.H2("Robot Limpiador de Techos Fotovoltaicos UPIITA", className="autonomous-title"), width=12)
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    html.H4("Control y monitoreo del robot en UPIITA", className="section-title"),
+                    html.P([html.Strong("Nivel de Agua:"), " Lleno"], className="status-text"),
+                    html.P([html.Strong("Nivel de Batería:"), " 60%"], className="status-text"),
+                    html.P([html.Strong("Inclinación:"), " 5 grados"], className="status-text"),
+                    dbc.Row([
+                        dbc.Col([
+                            html.P([html.Strong("Humedad:"), " 45%"], className="status-text"),
+                        ], width=2),
+                        dbc.Col([
+                            html.P([html.Strong("Temperatura:"), " 22°C"], className="status-text"),
+                        ], width=2),
+                    ]),
+                    dbc.Button("Inicio", color="success", className="mr-2 control-button"),
+                    dbc.Button("Paro", color="danger", className="control-button")
+                ], width=6),
+                dbc.Col([
+                    html.H4("Configuración del Usuario", className="section-title"),
+                    dbc.Checklist(
+                        options=[{"label": html.Span("Agua", style={"color": "white"}), "value": 1}],
+                        value=[],
+                        id="watered-toggle",
+                        switch=True,
+                        className="checklist-item"
+                    ),
+                    html.P("Velocidad de Ruedas:", style={"color": "white"}),
+                    dcc.Input(type="number", value=100, min=50, max=200, step=10, className="input-pink"),
+                    html.P("Velocidad de Cepillos:", style={"color": "white"}),
+                    dcc.Input(type="number", value=50, min=10, max=100, step=10, className="input-pink"),
+                    dbc.Button("Encender Rodillo", id="start-roller-button", color="info", className="control-button"),
+                    dbc.Button("Parar Rodillo", id="stop-roller-button", color="warning", className="control-button"),
+                    dbc.Button("Iniciar Limpieza", id="start-cleaning-button", color="primary", className="mt-4 start-cleaning-button")
+                ], width=6),
+            ]),
+            dbc.Row([
+                dbc.Col(html.Div([
+                    html.H4("Información de Sensores Ultrasónicos", className="section-title"),
+                    dbc.Row([
+                        dbc.Col([
+                            html.P([html.Strong("Delante Izquierdo:"), " 50 cm"], className="status-text"),
+                            html.P([html.Strong("Medio Izquierdo:"), " 50 cm"], className="status-text"),
+                            html.P([html.Strong("Detrás Izquierdo:"), " 50 cm"], className="status-text"),
+                        ], width=6),
+                        dbc.Col([
+                            html.P([html.Strong("Delante Derecho:"), " 50 cm"], className="status-text"),
+                            html.P([html.Strong("Medio Derecho:"), " 50 cm"], className="status-text"),
+                            html.P([html.Strong("Detrás Derecho:"), " 50 cm"], className="status-text"),
+                        ], width=6),
+                    ]),
+                ]), width=12)
+            ]),
+            dbc.Row([
+                dbc.Col(dbc.Button("Regresar al Menú", href="/menu", color="secondary", className="menu-control left-button"), className="col-1"),
+                dbc.Col(dbc.Button("Paro de Emergencia", href="/logout", color="danger", className="menu-control right-button"), className="col-1 offset-10")
+            ], className="top-row-buttons"),
+            dbc.Row([
+                dbc.Col(html.Div([
+                    html.H4("Última Imagen Capturada", className="image-title"),
+                    html.Div(id="image-container", className="image-box")
+                ], className="image-section"), width=12)
+            ])
+        ], fluid=True)
+    ])

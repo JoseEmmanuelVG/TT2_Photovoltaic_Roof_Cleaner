@@ -16,7 +16,7 @@ def leer_datos_serial():
         datos = linea.split(',')
 
         # Verifica si hay datos de sensores
-        if len(datos) == 6:  # 4 distancias + 2 datos DHT11
+        if len(datos) == 7:  # 4 distancias + 2 datos DHT11 + 1 Voltaje Fuente
             return datos
         else:
             return None
@@ -45,10 +45,20 @@ def control_new_motor(action, pwm_value):
     elif action == 'stop':
         enviar_comando("D")
 
+
+
+
+
+
+
+
+
 # Motores desplazamiento 
 Device.pin_factory = LGPIOFactory()
 
 class StepperMotor:
+    shared_delay = 0.0001  # Variable compartida para el delay
+
     def __init__(self, pul_pin, dir_pin, ena_pin):
         self.PUL = OutputDevice(pul_pin)
         self.DIR = OutputDevice(dir_pin)
@@ -56,21 +66,21 @@ class StepperMotor:
         self.running = False
         self.thread = None
 
-    def move(self, direction, delay=0.0001):
+    def move(self, direction):
         self.DIR.value = direction
         self.ENA.on()
         while self.running:
             self.PUL.on()
-            time.sleep(delay)
+            time.sleep(StepperMotor.shared_delay)  # Usar la variable compartida
             self.PUL.off()
-            time.sleep(delay)
+            time.sleep(StepperMotor.shared_delay)  # Usar la variable compartida
         if not self.running:
             self.ENA.off()
 
-    def start_moving(self, direction, delay=0.0001):
+    def start_moving(self, direction):
         if not self.running:
             self.running = True
-            self.thread = threading.Thread(target=self.move, args=(direction, delay))
+            self.thread = threading.Thread(target=self.move, args=(direction,))
             self.thread.start()
 
     def stop_moving(self, hold=False):
@@ -126,6 +136,15 @@ def emergency_stop():
     print("Emergency: All motors have been stopped.")
 
 stop_all_motors(hold=True)
+
+
+
+
+
+
+
+
+
 
 # Cámara
 import os
@@ -183,3 +202,69 @@ def is_wifi_connected():
         print(f"Error verificando la conexión WiFi: {e}")
     return False
 
+
+########### sensores 2 ultra
+from gpiozero import DistanceSensor
+import threading
+import time
+
+# Define los pines para los sensores de distancia
+sensor1 = DistanceSensor(echo=4, trigger=18, max_distance=4, threshold_distance=0.05)
+sensor2 = DistanceSensor(echo=12, trigger=13, max_distance=4, threshold_distance=0.05)
+
+# Contenedor mutable para las distancias de los sensores
+sensor_distances = [0, 0]  # Index 0 for sensor1, index 1 for sensor2
+
+def calibrate_distance(distance):
+    """
+    Ajustar la calibración si es necesario
+    """
+    return round(distance * 100 - 0.5, 2)  # Convertir la distancia de metros a centímetros y ajustar
+
+# Función para leer las distancias de los sensores
+def read_sensors():
+    while True:
+        try:
+            sensor_distances[0] = calibrate_distance(sensor1.distance)
+            sensor_distances[1] = calibrate_distance(sensor2.distance)
+            print(f"Reading Sensors - Sensor 1: {sensor_distances[0]} cm, Sensor 2: {sensor_distances[1]} cm")  # Debugging line
+        except Exception as e:
+            print(f"Error reading sensors: {e}")
+        time.sleep(1)
+
+# Iniciar el hilo para la lectura de los sensores
+sensor_thread = threading.Thread(target=read_sensors)
+sensor_thread.daemon = True
+sensor_thread.start()
+
+
+
+
+######## FUNCIONES BOMBAS DE AGUA, FLOTAORES Y ACTUADORES
+
+# funciones flotadores: 
+from gpiozero import Button, LED
+
+# Configurar los pines GPIO7 y GPIO8 como entradas pull-down
+flotador7 = Button(7, pull_up=False)
+flotador8 = Button(8, pull_up=False)
+
+# Definir funciones que se ejecutarán al presionar los botones
+def flotador7_pressed():
+    print("flotador1 LevelDown ON")
+
+def flotador8_pressed():
+    print("flotador2 LevelUp ON")
+
+# Asociar las funciones a los eventos de presionar los botones
+flotador7.when_pressed = flotador7_pressed
+flotador8.when_pressed = flotador8_pressed
+
+# funciones bomba de agua:
+# Configurar el pin GPIO19 como una salida
+relay = LED(19)
+
+# funciones actuadores:
+# Configurar los pines GPIO2 y GPIO3 como salidas
+actuadorPin1 = LED(9)
+actuadorPin2 = LED(11)
