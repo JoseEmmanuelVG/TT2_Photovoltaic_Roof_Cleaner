@@ -1,37 +1,67 @@
 import time
 import threading
 import serial
-import matplotlib.pyplot as plt
+import math
+import os
+import base64
+import subprocess
 from gpiozero import Device, OutputDevice, DistanceSensor
 from gpiozero.pins.lgpio import LGPIOFactory
+import matplotlib.pyplot as plt
 
 # Configuración de los pines
 Device.pin_factory = LGPIOFactory()
 
+# Directorio de almacenamiento de imágenes
+IMAGE_DIR = '/home/ttm/TT2_Photovoltaic_Roof_Cleaner/Pruebas/RASP/Autonomous Control/assets'
+
+def save_image(image_data, prefix, index):
+    # Asegúrate de que el directorio de imágenes exista
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    
+    file_name = f"{prefix}_{index}.jpg"
+    file_path = os.path.join(IMAGE_DIR, file_name)
+    with open(file_path, "wb") as f:
+        f.write(base64.b64decode(image_data.split(",")[1]))
+    print(f"Image saved to {file_path}")  # Línea de depuración
+    return file_name
+
+def capture_image(image_name):
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+    file_path = os.path.join(IMAGE_DIR, image_name)
+    subprocess.run(['libcamera-still', '-o', file_path])
+    with open(file_path, "rb") as f:
+        encoded_image = base64.b64encode(f.read()).decode()
+    return f"data:image/jpeg;base64,{encoded_image}"
+
 # Clase para controlar los motores
 class StepperMotor:
-    def __init__(self, pul_pin, dir_pin, ena_pin):
+    def __init__(self, pul_pin, dir_pin, ena_pin, steps_per_revolution=6000):
         self.PUL = OutputDevice(pul_pin)
         self.DIR = OutputDevice(dir_pin)
         self.ENA = OutputDevice(ena_pin, initial_value=False)
         self.running = False
         self.thread = None
         self.delay = 0.001  # Valor por defecto del delay
+        self.steps_per_revolution = steps_per_revolution
 
-    def move(self, direction):
+    def move(self, direction, steps):
         self.DIR.value = direction
         self.ENA.on()
-        while self.running:
+        for _ in range(steps):
+            if not self.running:
+                break
             self.PUL.on()
             time.sleep(self.delay)
             self.PUL.off()
             time.sleep(self.delay)
         self.ENA.off()
+        self.running = False  # Asegurar que el estado 'running' se restablezca
 
-    def start_moving(self, direction):
+    def start_moving(self, direction, steps):
         if not self.running:
             self.running = True
-            self.thread = threading.Thread(target=self.move, args=(direction,))
+            self.thread = threading.Thread(target=self.move, args=(direction, steps))
             self.thread.start()
 
     def stop_moving(self):
@@ -115,7 +145,11 @@ class PIDController:
 pid_left = PIDController(0.1, 0.01, 0.05)
 pid_right = PIDController(0.1, 0.01, 0.05)
 
+image_index = 0
+
 def control_robot():
+    global image_index
+
     while True:
         datos = leer_datos_serial()
         if datos:
@@ -138,9 +172,25 @@ def control_robot():
             # Condición para detener el movimiento
             if (front_left > 30 and front_right > 30) or (rear_left > 30 and rear_right > 30):
                 stop_all_motors()
+                continue
 
- #######           # Aplicar PID para corregir la dirección si el robot se va a la izquierda    #######
-            elif (middle_right < 10) and (rear_right < 30 and front_right < 30):
+            # Función para mover los motores
+            def move_all_motors(direction, steps):
+                global image_index
+                motor1.start_moving(direction, steps)
+                motor2.start_moving(not direction, steps)
+                motor3.start_moving(direction, steps)
+                motor4.start_moving(not direction, steps)
+                motor1.thread.join()  # Espera a que motor1 complete su movimiento
+                stop_all_motors()
+                time.sleep(4)  # Pausa de 4 segundos
+                image_name = f"image_{image_index}.jpg"
+                capture_image(image_name)
+                print(f"Image captured: {image_name}")
+                image_index += 1
+
+            ####### Aplicar PID para corregir la dirección si el robot se va a la izquierda #######
+            if (middle_right < 10) and (front_right < 30 and rear_right < 30):
                 correction = pid_left.compute(10, middle_right)
                 for i in range(10):
                     delay1_3 = max(0.0005, min(0.001, 0.0005 - (i * 0.00009)))  # Incremento para motor1 y motor3
@@ -154,14 +204,11 @@ def control_robot():
                     print(f"Step {i+1}: motor1 and motor3 delay = {delay1_3:.6f}, motor2 and motor4 delay = {delay2_4:.6f}")
                     time.sleep(0.1)
                 
-                motor1.start_moving(False)
-                motor2.start_moving(True)
-                motor3.start_moving(False)
-                motor4.start_moving(True)
+                move_all_motors(True, 6000)
                 print(f"PID Correction Left: {correction}, Motor Delays: {motor1.delay}, {motor2.delay}, {motor3.delay}, {motor4.delay}")
-            
+
             # Rectificar ruedas
-            elif (middle_right < 10 or middle_right > 10) and (rear_right > 30 and front_right < 30):
+            elif (middle_right > 10) and (front_right > 30 and rear_right < 30):
                 correction = pid_right.compute(10, middle_right)
                 for i in range(10):
                     delay1_3 = max(0.0005, min(0.001, 0.001 + (i * 0.00009)))   # Decremento para motor1 y motor3
@@ -175,17 +222,11 @@ def control_robot():
                     print(f"Step {i+1}: motor1 and motor3 delay = {delay1_3:.6f}, motor2 and motor4 delay = {delay2_4:.6f}")
                     time.sleep(0.1)
                 
-                motor1.start_moving(False)
-                motor2.start_moving(True)
-                motor3.start_moving(False)
-                motor4.start_moving(True)
+                move_all_motors(True, 6000)
                 print(f"PID Correction Right: {correction}, Motor Delays: {motor1.delay}, {motor2.delay}, {motor3.delay}, {motor4.delay}")
 
-
-
-
- #######           # Aplicar PID para corregir la dirección si el robot se va a la derecha    #######
-            elif (middle_right > 10) and (rear_right > 30 and front_right > 30):
+            ####### Aplicar PID para corregir la dirección si el robot se va a la derecha #######
+            elif (middle_right > 10) and (front_right > 30 and rear_right > 30):
                 correction = pid_right.compute(10, middle_right)
                 for i in range(10):
                     delay1_3 = max(0.0005, min(0.001, 0.001 + (i * 0.00009)))   # Decremento para motor1 y motor3
@@ -198,16 +239,12 @@ def control_robot():
 
                     print(f"Step {i+1}: motor1 and motor3 delay = {delay1_3:.6f}, motor2 and motor4 delay = {delay2_4:.6f}")
                     time.sleep(0.1)
-
-                motor1.start_moving(False)
-                motor2.start_moving(True)
-                motor3.start_moving(False)
-                motor4.start_moving(True)
+                
+                move_all_motors(True, 6000)
                 print(f"PID Correction Right: {correction}, Motor Delays: {motor1.delay}, {motor2.delay}, {motor3.delay}, {motor4.delay}")
-            
 
             # Aplicar PID para corregir la dirección si el robot se va a la izquierda
-            elif (middle_right > 10) and (rear_right < 30 and front_right > 30):
+            elif (middle_right > 10) and (front_right < 30 and rear_right > 30):
                 correction = pid_left.compute(10, middle_right)
                 for i in range(10):
                     delay1_3 = max(0.0005, min(0.001, 0.0005 - (i * 0.00009)))  # Incremento para motor1 y motor3
@@ -221,22 +258,13 @@ def control_robot():
                     print(f"Step {i+1}: motor1 and motor3 delay = {delay1_3:.6f}, motor2 and motor4 delay = {delay2_4:.6f}")
                     time.sleep(0.1)
                 
-                motor1.start_moving(False)
-                motor2.start_moving(True)
-                motor3.start_moving(False)
-                motor4.start_moving(True)
+                move_all_motors(True, 6000)
                 print(f"PID Correction Left: {correction}, Motor Delays: {motor1.delay}, {motor2.delay}, {motor3.delay}, {motor4.delay}")
             
-
-            
-            
             else:
-                delay = 0.0005  # Retardo entre pulsos, controla la velocidad del motor
-                motor1.start_moving(False)
-                motor2.start_moving(True)
-                motor3.start_moving(False)
-                motor4.start_moving(True)
-        time.sleep(0.3)
+                move_all_motors(True, 6000)
+            
+            time.sleep(1)  # Pausar entre movimientos de 30 cm
 
 control_thread = threading.Thread(target=control_robot)
 control_thread.daemon = True

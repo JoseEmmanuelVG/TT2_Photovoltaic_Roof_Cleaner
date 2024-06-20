@@ -1,0 +1,45 @@
+from Right_RobotController_Front_JEVG import RobotControllerRightFront
+from Right_RobotController_Back_JEVG import RobotControllerRightBack
+import time
+
+def main():
+    # Inicializa las instancias de los controladores
+    right_front_controller = RobotControllerRightFront()
+    right_back_controller = RobotControllerRightBack()
+    
+    try:
+        # Inicia el controlador delantero derecho
+        print("Iniciando controlador delantero derecho...")
+        right_front_controller.start()
+        
+        # Condición para cambiar al controlador trasero derecho
+        while True:
+            sensor_data = right_front_controller.sensor_data[-1] if right_front_controller.sensor_data else [0, 0, 0, 0, 0, 0]
+            front_left, front_right, _, _, rear_left, rear_right = sensor_data
+            if (front_left > 30 and front_right > 30) or (rear_left > 30 and rear_right > 30):
+                print("Condición alcanzada: detener controlador delantero derecho.")
+                right_front_controller.stop()
+                break
+            time.sleep(0.1)
+        
+        # Inicia el controlador trasero derecho
+        print("Iniciando controlador trasero derecho...")
+        right_back_controller.start()
+        
+        # Condición para detener el controlador trasero derecho
+        while True:
+            sensor_data = right_back_controller.sensor_data[-1] if right_back_controller.sensor_data else [0, 0, 0, 0, 0, 0]
+            front_left, front_right, _, _, rear_left, rear_right = sensor_data
+            if (front_left > 30 and front_right > 30) or (rear_left > 30 and rear_right > 30):
+                print("Condición alcanzada: detener controlador trasero derecho.")
+                right_back_controller.stop()
+                break
+            time.sleep(0.1)
+    
+    except KeyboardInterrupt:
+        print("Interrupción del teclado detectada, deteniendo todos los controladores.")
+        right_front_controller.stop()
+        right_back_controller.stop()
+
+if __name__ == "__main__":
+    main()

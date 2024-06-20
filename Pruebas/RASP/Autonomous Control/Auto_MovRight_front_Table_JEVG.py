@@ -137,8 +137,10 @@ def control_robot():
 
             # Condición para detener el movimiento
             if (front_left > 30 and front_right > 30) or (rear_left > 30 and rear_right > 30):
-                stop_all_motors()
-
+                    motor1.stop_moving()
+                    motor2.stop_moving()
+                    motor3.stop_moving()
+                    motor4.stop_moving()
  #######           # Aplicar PID para corregir la dirección si el robot se va a la izquierda    #######
             elif (middle_right < 10) and (front_right < 30 and rear_right < 30):
                 correction = pid_left.compute(10, middle_right)
