@@ -39,6 +39,10 @@ To develop and implement a communication and control system on a Raspberry Pi 5,
 - **Network Inspection**: Monitoring network requests and responses.
 - **Identified Errors**: Failed requests with status code 500 without raspberry pi Conection.
 
+
+https://github.com/user-attachments/assets/11d51de4-1a0d-4778-8a51-9e21ee716dde
+
+
 ### Implementation of Callbacks and Visual Controllers
 **Robot Movement Control**: Integration of interactive buttons in the UI to move the robot in various directions.
 
@@ -54,13 +58,39 @@ To develop and implement a communication and control system on a Raspberry Pi 5,
 - **Float Sensors**: Status monitoring in the UI.
 - **Water Pump Relay**: Power control.
 - **H-Bridge for Electronic Actuators**: Control of elongation and retraction.
-
 **Addition of Lateral Ultrasonic Sensors**: Improved autonomous navigation of the robot.
 
+
+https://github.com/user-attachments/assets/f456d6cd-8fd6-40da-bb59-43c6d3e4d9b1
+
 ## Results
-Functional and usability tests confirmed the correct operation of the communication and control modules, as well as the web user interface, providing precise and reliable control of the mobile robot.
+Functional and usability tests confirmed the correct operation of the communication and control modules, as well as the web user interface. 
 
 
+https://github.com/user-attachments/assets/df1d98e5-de86-40cc-8c0b-590937035836
+
+
+Providing an accurate and reliable control of the final degree project entitled: Mobile robot with autonomous displacement for the cleaning of photovoltaic solar roofs, developed by:
+
+### Students: 
+
+***- Kevin D. D.*** 
+***- Angel Yeremi L. A.***
+***- José Emmanuel V. G.*** 
+
+#### Project advisors:
+
+*- M. en C. Jesús Enríquez G.* 
+*- Ing. Octavio M. C.* 
+*- M. en C. David Abraham M. E.*
+
+#### Project Secretary:
+
+*Dr. Griselda S. O.*
+
+#### Chair project evaluator: 
+
+*Guillermo P. G.* 
 
 
 
